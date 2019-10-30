@@ -1,0 +1,33 @@
+language: cpp
+compiler: clang
+
+jobs:
+  include:
+    - name: Build
+      os: linux
+      dist: bionic
+      addons:
+        apt:
+          sources:
+            - llvm-toolchain-bionic-9
+          packages:
+            - clang-9
+      env:
+        - LLVM_VERSION=9.0.0
+        - ANYWHERE_VERSION=v5
+      before_install:
+        - curl -O https://github.com/theopolis/build-anywhere/releases/download/${ANYWHERE_VERSION}/x86_64-anywhere-linux-gnu-${ANYWHERE_VERSION}.tar.xz
+        - tar xf x86_64-anywhere-linux-gnu-${ANYWHERE_VERSION}.tar.xz
+        - source x86_64-anywhere-linux-gnu/scripts/anywhere-setup.sh
+      before_script:
+      script:
+        - git clone --branch llvmorg-${LLVM_VERSION} --depth 1 https://github.com/llvm/llvm-project.git
+        - cd llvm-project && mkdir build && cd build
+        - cmake -DLLVM_ENABLE_PROJECTS=clang -DLLVM_TARGETS_TO_BUILD="AArch64;X86" -DCMAKE_BUILD_TYPE=Release -G "Unix Makefiles" ../llvm
+        - make clang-format -j2
+      # deploy:
+      #   provider: releases
+      #   api_key: "GITHUB OAUTH TOKEN"
+      #   file: bin/clang-format
+      #   skip_cleanup: true
+      #   draft: true
