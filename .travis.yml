@@ -1,33 +1,28 @@
-language: cpp
-compiler: clang
+language: minimal
 
 jobs:
   include:
     - name: Build
       os: linux
       dist: bionic
-      addons:
-        apt:
-          sources:
-            - llvm-toolchain-bionic-9
-          packages:
-            - clang-9
       env:
         - LLVM_VERSION=9.0.0
         - ANYWHERE_VERSION=v5
-      before_install:
-        - curl -O https://github.com/theopolis/build-anywhere/releases/download/${ANYWHERE_VERSION}/x86_64-anywhere-linux-gnu-${ANYWHERE_VERSION}.tar.xz
+      install:
+        - wget https://github.com/theopolis/build-anywhere/releases/download/${ANYWHERE_VERSION}/x86_64-anywhere-linux-gnu-${ANYWHERE_VERSION}.tar.xz
         - tar xf x86_64-anywhere-linux-gnu-${ANYWHERE_VERSION}.tar.xz
         - source x86_64-anywhere-linux-gnu/scripts/anywhere-setup.sh
-      before_script:
       script:
         - git clone --branch llvmorg-${LLVM_VERSION} --depth 1 https://github.com/llvm/llvm-project.git
         - cd llvm-project && mkdir build && cd build
-        - cmake -DLLVM_ENABLE_PROJECTS=clang -DLLVM_TARGETS_TO_BUILD="AArch64;X86" -DCMAKE_BUILD_TYPE=Release -G "Unix Makefiles" ../llvm
+        - cmake -DLLVM_ENABLE_PROJECTS=clang -DLLVM_TARGETS_TO_BUILD="AArch64;X86" -DLLVM_BUILD_STATIC=true -DCMAKE_BUILD_TYPE=Release -G "Unix Makefiles" ../llvm
         - make clang-format -j2
-      # deploy:
-      #   provider: releases
-      #   api_key: "GITHUB OAUTH TOKEN"
-      #   file: bin/clang-format
-      #   skip_cleanup: true
-      #   draft: true
+      deploy:
+        provider: releases
+        api_key:
+          secure: GhnIUnEVbcNPyGMB5OzB/esKZtVZtOfQTzPmA/ZBUWTw7z7C3742u+eoTgPQ/lGY4S5AGBal62cROoxt2pNxfmHRFmTOdiHbZqA1GFxV0+q4iwNUhdwyMtsqqsbMJON/mzl6TyNI8OyTSmyxncEdnXRo2I6T3UC/fDRZr+8DINRl7BL19neVS9nz6+Zs8F7JtMpY7Adcjb9XF8L55CSXhKIzGZ+dVgIsRlHDyYXakF6MnY0qgRCG1YZyJnq7e0XB6W1Z+ZkqohdAHhHM+yoW2woIxvcLEcC1quya5G+Woldr+b4zLGvrtTo7Scnu48rjZP4YMEHFzevuqWrNg7Uokl/bSdHP8/OnLPzuZrKHmXw/BI1BZuvlNIKlr1Bakpngq8c3nFkW+3fwpVfjcd5AJvBSJPa7t6aIRw4Y3ZqaoJpOyx0QUQ7wIIkbjL0bE/HMfzdUXSDxjdvoEEuXMSAdG9V/TAFRzeNDRsWAm5tnXWxMD4YIb0iYkjOfxk3+q8lQNRLLogDJoBu6NGal/b75JAOMde6v4YZj2qf++Ui3ZXQR3hCNofxj9Tx5puKk8nXmPEcyK9tQsv8bHDP/hD9v98Fr7euQMDIleuWHumyU6ZyP5md9Zwtam1T1fFJoQ5WraFTiP4uaql+KgTFO1YpLdv0CLQNHpsyJTAYkC874fLA=
+        file: ${TRAVIS_BUILD_DIR}/llvm-project/build/bin/clang-format
+        on:
+          repo: janmayer/clang-tools-anywhere
+        draft: true
+        skip_cleanup: true
